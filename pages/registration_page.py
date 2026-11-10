@@ -4,33 +4,24 @@ from pages.base_page import BasePage
 
 
 class RegistrationPage(BasePage):
-    # REGISTRATION_ICON = (By.XPATH, "//a[@class='ico-register']")
-    # FIRST_NAME_INPUT = (By.ID, "FirstName")
-    # LAST_NAME_INPUT = (By.ID, "LastName")
-    # EMAIL_INPUT = (By.ID, "Email")
-    # PASSWORD_INPUT = (By.ID, "Password")
-    # CONFIRM_PASSWORD_INPUT = (By.ID, "ConfirmPassword")
-    # REGISTER_BUTTON = (By.ID, "register-button")
-    # LOG_OUT_BUTTON = (By.XPATH, "//a[@class='ico-logout']")
-    # WRONG_EMAIL_MESSAGE = (By.XPATH, "//li[normalize-space()='No customer account found']")
-    # WRONG_PASSWORD_MESSAGE = (By.XPATH, "//li[normalize-space()='The credentials provided are incorrect']")
-    # INVALID_EMAIL_MESSAGE = (By.XPATH, "//span[@for='Email']")
 
-    REGISTRATION_ICON = (By.CSS_SELECTOR, "[href='/register']")
-    FIRST_NAME_INPUT = (By.CSS_SELECTOR, "input[name='firstName']")
-    LAST_NAME_INPUT = (By.CSS_SELECTOR, "input[name='lastName']")
-    EMAIL_INPUT = (By.CSS_SELECTOR, "input[name = 'username']")
-    PASSWORD_INPUT = (By.CSS_SELECTOR, "input[name = 'password']")
+    FIRST_NAME_INPUT = (By.NAME, "firstName")
+    LAST_NAME_INPUT = (By.NAME, "lastName")
+    EMAIL_INPUT = (By.NAME, "username")
+    PASSWORD_INPUT = (By.NAME, "password")
     TERM_OF_USE_CHECK_BOX = (By.ID, "terms-of-use")
-    REGISTRATION_BUTTON = (By.XPATH, "//button[text()='Y’alla!']")
-    LOG_OUT_BUTTON = (By.XPATH, "//button[text()='Log out']")
-    REGISTRATION_CONFIRMATION1 = (By.CSS_SELECTOR, "h3")
-    REGISTRATION_CONFIRMATION2 = (By.CSS_SELECTOR, "p")
-    ERROR_MESSAGE = (By.XPATH, "//*[text()='Name is required']")
-    OK_BUTTON = (By.XPATH, "//*[text()='OK']")
+    REGISTRATION_BUTTON = (By.CSS_SELECTOR, "button[type='submit']")
 
-    def is_registration_icon_displayed(self):
-        return self.is_element_visible(self.REGISTRATION_ICON)
+    #Server response Modal window locators (linked via h3 + p adjacency, no blind tag search)
+    MODAL_TITLE = (By.CSS_SELECTOR, "h3:has(+ p)")
+    MODAL_MESSAGE = (By.CSS_SELECTOR, "h3 + p")
+    OK_BUTTON = (By.XPATH, "//button[text()='OK']")
+
+    #Error messages
+    FIRST_NAME_ERROR = (By.CSS_SELECTOR, "input[name='firstName'] ~ div.error")
+    LAST_NAME_ERROR = (By.CSS_SELECTOR, "input[name='lastName'] ~ div.error")
+    EMAIL_ERROR = (By.CSS_SELECTOR, "input[name='username'] ~ div.error")
+    PASSWORD_ERROR = (By.CSS_SELECTOR, "input[name='password'] ~ div.error")
 
     def are_registration_form_elements_displayed(self):
         return (self.is_element_visible(self.FIRST_NAME_INPUT)
@@ -40,8 +31,6 @@ class RegistrationPage(BasePage):
                 and self.is_element_visible(self.TERM_OF_USE_CHECK_BOX)
                 and self.is_element_visible(self.REGISTRATION_BUTTON))
 
-    def open_registration_page(self):
-        self.click_element(self.REGISTRATION_ICON)
 
     def fill_first_name_field(self, first_name):
         self.input_text(self.FIRST_NAME_INPUT, first_name)
@@ -61,40 +50,38 @@ class RegistrationPage(BasePage):
     def click_registration_button(self):
         self.click_element(self.REGISTRATION_BUTTON)
 
-    # def accept_alert(self):
-    #     self.accept_alert()
+    def is_submit_button_disabled(self):
+        return self.is_element_disabled(self.REGISTRATION_BUTTON)
 
-    def is_log_out_button_displayed(self):
-        return self.is_element_visible(self.LOG_OUT_BUTTON)
+    def get_first_name_error_text(self):
+        return self.get_element_text(self.FIRST_NAME_ERROR)
 
-    def is_confirm_message1_displayed(self, message):
-        return self.check_element_text(self.REGISTRATION_CONFIRMATION1, message)
+    def get_last_name_error_text(self):
+        return self.get_element_text(self.LAST_NAME_ERROR)
 
-    def is_confirm_message2_displayed(self, message):
-        return self.check_element_text(self.REGISTRATION_CONFIRMATION2, message)
+    def get_email_error_text(self):
+        return self.get_element_text(self.EMAIL_ERROR)
 
-    def close_window(self):
+    def get_password_error_text(self):
+        return self.get_element_text(self.PASSWORD_ERROR)
+
+    def get_modal_title_text(self):
+        return self.get_element_text(self.MODAL_TITLE)
+
+    def get_modal_message_text(self):
+        return self.get_element_text(self.MODAL_MESSAGE)
+
+    def close_modal_window(self):
         self.click_element(self.OK_BUTTON)
 
-    def submit_button_disabled(self):
-        self.is_element_disabled(self.REGISTRATION_BUTTON)
-
-    def is_error_message_displayed(self, text):
-        return self.check_element_text(self.ERROR_MESSAGE, text)
-
-    # def is_wrong_email_message(self):
-    #     return self.is_element_visible(self.WRONG_EMAIL_MESSAGE)
-    #
-    # def is_wrong_password_message(self):
-    #     return self.is_element_visible(self.WRONG_PASSWORD_MESSAGE)
-    #
-    # def is_invalid_email_message(self):
-    #     return self.is_element_visible(self.INVALID_EMAIL_MESSAGE)
-
-    def register(self, first_name, last_name, email, password):
+    def fill_registration_form(self, first_name, last_name, email, password, agree_terms=True):
         self.fill_first_name_field(first_name)
         self.fill_last_name_field(last_name)
         self.fill_email_field(email)
         self.fill_password_field(password)
-        self.click_term_of_use_checkbox()
+        if agree_terms:
+            self.click_term_of_use_checkbox()
+
+    def register(self, first_name, last_name, email, password):
+        self.fill_registration_form(first_name, last_name, email, password, agree_terms=True)
         self.click_registration_button()

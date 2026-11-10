@@ -1,29 +1,30 @@
 import os
 import uuid
 
+import pytest
 from dotenv import load_dotenv
 
 from pages.registration_page import RegistrationPage
 
 load_dotenv()
 
-#valid data - user with this data unregistered
-random_suffix = uuid.uuid4().hex[:8]
 FIRST_NAME = "Test_first_name"
 LAST_NAME = "Test_last_name"
-VALID_EMAIL = f"test_user_reg{random_suffix}@gm.com"
-VALID_PASSWORD = os.getenv("TEST_USER_PASSWORD")
-if not VALID_PASSWORD:
-    raise ValueError("Critical error: password not found in the environment!")
 
-# #wrong data - unregistered email (valid format), pass (valid format) doesn't match the login
-# UNREGISTERED_EMAIL = "test1_user1@gm.com"
-# WRONG_PASSWORD = os.getenv("TEST_USER_WRONG_PASSWORD")
-# if not WRONG_PASSWORD:
-#     raise ValueError("Critical error: wrong password not found in the environment!")
-#
-# #invalid data - invalid format of email
-# INVALID_EMAIL = "test1gg.com"
+#invalid data - invalid format of email and password
+INVALID_EMAIL = "test1gg.com"
+PASSWORD_WITHOUT_SPECIAL_CHAR = "qwertasdfQ1"
+
+@pytest.fixture(scope="session")
+def valid_password():
+    password = os.getenv("TEST_USER_PASSWORD")
+    if not password:
+        raise ValueError("Critical error: password not found in the environment!")
+    return password
+
+#generate unique email for each call
+def get_unique_email():
+    return f"test_user_reg{uuid.uuid4().hex[:8]}@gm.com"
 
 
 def test_registration_form_is_available(driver):
@@ -32,18 +33,52 @@ def test_registration_form_is_available(driver):
     registration_page.open_registration_page()
     assert registration_page.are_registration_form_elements_displayed(), "Registration form elements are not displayed"
 
-def test_valid_registration_success(driver):
+def test_valid_registration_success(driver, valid_password):
     registration_page = RegistrationPage(driver)
     registration_page.open_registration_page()
-    registration_page.register(FIRST_NAME, LAST_NAME, VALID_EMAIL, VALID_PASSWORD)
-    assert registration_page.is_confirm_message1_displayed("Registered"), "Text is not displayed"
-    assert registration_page.is_confirm_message2_displayed("You are logged in success"), "Text is not displayed"
-    registration_page.close_window()
-    assert registration_page.is_log_out_button_displayed(), "Button is not displayed"
+    registration_page.register(FIRST_NAME, LAST_NAME, get_unique_email(), valid_password)
+    assert registration_page.get_modal_title_text() == "Registered"
+    assert registration_page.get_modal_message_text() == "You are logged in success"
+    registration_page.close_modal_window()
+    assert registration_page.is_log_out_button_displayed(), "Log out button is not displayed after registration"
 
-def test_invalid_registration_with_empty_name(driver):
-        registration_page = RegistrationPage(driver)
-        registration_page.open_registration_page()
-        registration_page.register("", LAST_NAME, VALID_EMAIL, VALID_PASSWORD)
-        assert registration_page.is_error_message_displayed("Name is required"), "Text is not displayed"
-        assert registration_page.submit_button_disabled()
+def test_invalid_registration_with_empty_first_name(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form("", LAST_NAME, get_unique_email(), valid_password)
+    assert registration_page.get_first_name_error_text() == "Name is required"
+    assert registration_page.is_submit_button_disabled(), "Submit button must remain disabled"
+
+def test_invalid_registration_with_empty_last_name(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form(FIRST_NAME, "", get_unique_email(), valid_password)
+    assert registration_page.get_last_name_error_text() == "Last name is required"
+    assert registration_page.is_submit_button_disabled(), "Submit button must remain disabled"
+
+def test_invalid_registration_with_empty_email(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form(FIRST_NAME, LAST_NAME, "", valid_password)
+    assert registration_page.get_email_error_text() == "Email is required"
+    assert registration_page.is_submit_button_disabled(), "Submit button must remain disabled"
+
+def test_invalid_registration_with_empty_password(driver):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form(FIRST_NAME, LAST_NAME, get_unique_email(), "")
+    assert registration_page.get_password_error_text() == "Password is required"
+    assert registration_page.is_submit_button_disabled(), "Submit button must remain disabled"
+
+def test_invalid_registration_with_invalid_email_format(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form(FIRST_NAME, LAST_NAME, INVALID_EMAIL, valid_password)
+    assert registration_page.get_email_error_text() == "Wrong email format"
+    assert registration_page.is_submit_button_disabled(), "Submit button must remain disabled"
+
+def test_invalid_registration_without_terms_checkbox(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.fill_registration_form(FIRST_NAME, LAST_NAME, get_unique_email(), valid_password, False)
+    assert registration_page.is_submit_button_disabled(), "Submit button must be disabled when Terms are unchecked"
