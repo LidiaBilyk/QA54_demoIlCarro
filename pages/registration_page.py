@@ -24,6 +24,10 @@ class RegistrationPage(BasePage):
     TERM_OF_USE_CHECK_BOX = (By.ID, "terms-of-use")
     REGISTRATION_BUTTON = (By.XPATH, "//button[text()='Y’alla!']")
     LOG_OUT_BUTTON = (By.XPATH, "//button[text()='Log out']")
+    REGISTRATION_CONFIRMATION1 = (By.CSS_SELECTOR, "h3")
+    REGISTRATION_CONFIRMATION2 = (By.CSS_SELECTOR, "p")
+    ERROR_MESSAGE = (By.XPATH, "//*[text()='Name is required']")
+    OK_BUTTON = (By.XPATH, "//*[text()='OK']")
 
     def is_registration_icon_displayed(self):
         return self.is_element_visible(self.REGISTRATION_ICON)
@@ -57,11 +61,26 @@ class RegistrationPage(BasePage):
     def click_registration_button(self):
         self.click_element(self.REGISTRATION_BUTTON)
 
-    def accept_alert(self):
-        self.accept_alert()
+    # def accept_alert(self):
+    #     self.accept_alert()
 
     def is_log_out_button_displayed(self):
         return self.is_element_visible(self.LOG_OUT_BUTTON)
+
+    def is_confirm_message1_displayed(self, message):
+        return self.check_element_text(self.REGISTRATION_CONFIRMATION1, message)
+
+    def is_confirm_message2_displayed(self, message):
+        return self.check_element_text(self.REGISTRATION_CONFIRMATION2, message)
+
+    def close_window(self):
+        self.click_element(self.OK_BUTTON)
+
+    def submit_button_disabled(self):
+        self.is_element_disabled(self.REGISTRATION_BUTTON)
+
+    def is_error_message_displayed(self, text):
+        return self.check_element_text(self.ERROR_MESSAGE, text)
 
     # def is_wrong_email_message(self):
     #     return self.is_element_visible(self.WRONG_EMAIL_MESSAGE)
