@@ -82,3 +82,50 @@ def test_invalid_registration_without_terms_checkbox(driver, valid_password):
     registration_page.open_registration_page()
     registration_page.fill_registration_form(FIRST_NAME, LAST_NAME, get_unique_email(), valid_password, False)
     assert registration_page.is_submit_button_disabled(), "Submit button must be disabled when Terms are unchecked"
+
+def test_invalid_registration_existing_user(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    existing_email = get_unique_email()
+
+    registration_page.open_registration_page()
+    registration_page.register(FIRST_NAME, LAST_NAME, existing_email, valid_password)
+    assert registration_page.get_modal_title_text() == "Registered"
+    registration_page.close_modal_window()
+    registration_page.click_log_out_button()
+
+    registration_page.open_registration_page()
+    registration_page.register(FIRST_NAME, LAST_NAME, existing_email, valid_password)
+    assert registration_page.get_modal_title_text() == "Registration failed"
+    #In the error modal window, the frontend renders text inside extra quotation marks: '"User already exists"'
+    assert registration_page.get_modal_message_text() == '"User already exists"'
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="Bug: Frontend allows whitespace in Name; UI renders '[object Object]' instead of field error"
+)
+def test_invalid_registration_with_space_in_name(driver, valid_password):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.register(" ", LAST_NAME, get_unique_email(), valid_password)
+
+    assert registration_page.get_modal_title_text() == "Registration failed"
+    assert registration_page.get_modal_message_text() == "не должно быть пустым"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="Bug: Special char is mandatory despite 'Can contain' spec, and UI renders '[object Object]'"
+)
+def test_invalid_registration_password_without_special_char(driver):
+    registration_page = RegistrationPage(driver)
+    registration_page.open_registration_page()
+    registration_page.register(FIRST_NAME, LAST_NAME, get_unique_email(), PASSWORD_WITHOUT_SPECIAL_CHAR)
+
+    expected_msg = (
+        "At least 8 characters; Must contain at least 1 uppercase letter, "
+        "1 lowercase letter, and 1 number; Can contain special characters [@$#^&*!]"
+    )
+    assert registration_page.get_modal_title_text() == "Registration failed"
+    assert registration_page.get_modal_message_text() == expected_msg

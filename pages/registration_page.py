@@ -13,9 +13,10 @@ class RegistrationPage(BasePage):
     REGISTRATION_BUTTON = (By.CSS_SELECTOR, "button[type='submit']")
 
     #Server response Modal window locators (linked via h3 + p adjacency, no blind tag search)
-    MODAL_TITLE = (By.CSS_SELECTOR, "h3:has(+ p)")
-    MODAL_MESSAGE = (By.CSS_SELECTOR, "h3 + p")
-    OK_BUTTON = (By.XPATH, "//button[text()='OK']")
+    MODAL_OVERLAY = (By.CSS_SELECTOR, ".modal-overlay")
+    MODAL_TITLE = (By.CSS_SELECTOR, ".modal-content h3")
+    MODAL_MESSAGE = (By.CSS_SELECTOR, ".modal-content p")
+    OK_BUTTON = (By.CSS_SELECTOR, ".modal-content button")
 
     #Error messages
     FIRST_NAME_ERROR = (By.CSS_SELECTOR, "input[name='firstName'] ~ div.error")
@@ -73,6 +74,7 @@ class RegistrationPage(BasePage):
 
     def close_modal_window(self):
         self.click_element(self.OK_BUTTON)
+        self.wait_until_invisible(self.MODAL_OVERLAY)
 
     def fill_registration_form(self, first_name, last_name, email, password, agree_terms=True):
         self.fill_first_name_field(first_name)

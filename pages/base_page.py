@@ -22,6 +22,11 @@ class BasePage:
         except TimeoutException:
             return False
 
+    def wait_until_invisible(self, locator, timeout=10):
+        return WebDriverWait(self.driver, timeout).until(
+            EC.invisibility_of_element_located(locator)
+        )
+
     def is_element_disabled(self, locator, timeout=10):
         try:
             element = WebDriverWait(self.driver, timeout).until(
